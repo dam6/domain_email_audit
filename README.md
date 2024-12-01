@@ -56,7 +56,7 @@ Where domains.txt contains one domain per line.
 If you want to discover or check DKIM records, provide a file with selectors using the -w flag:
 
 ```
-./domain_email_audit.sh -d domain1.com -w selectors.txt
+./domain_email_audit.sh -f domains.txt -w selectors.txt
 ```
 
 Where selectors.txt contains one selector per line.
@@ -66,7 +66,7 @@ Where selectors.txt contains one selector per line.
 To generate a CSV report of the audit results, use the --report flag. The script will generate a CSV file with the audit results and save it with the script name and timestamp.
 
 ```
-./domain_email_audit.sh -d domain1.com --report
+./domain_email_audit.sh -f domains.txt -w selectors.txt --report
 ```
 
 The CSV file will be named like domain_email_audit.sh.YYYY-MM-DD_HH-MM-SS.csv.
@@ -74,7 +74,7 @@ The CSV file will be named like domain_email_audit.sh.YYYY-MM-DD_HH-MM-SS.csv.
 ### Full Example
 
 ```
-./domain_email_audit.sh -d domain1.com,domain2.com -w selectors.txt --report
+./domain_email_audit.sh -f domains.txt -w selectors.txt --report
 ```
 
 This command checks SPF, DKIM, and DMARC records for domain1.com and domain2.com, uses selectors from selectors.txt for DKIM, and generates a CSV report.

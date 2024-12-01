@@ -90,7 +90,12 @@ The script will print a detailed report in the terminal showing the status of DM
 ### Example Output
 
 ```
-DOMAIN DMARC SPF DKIM DMARC POLICY SPF FAILURE REASON DKIM SELECTORS domain1.com ok ok ok reject - selector1 selector2 domain2.com nok ok nok none invalid version selector1
+DOMAIN                    DMARC    SPF      DKIM     DMARC POLICY     SPF FAILURE REASON             DKIM SELECTORS                          
+domain1.com               ok       ok       ok       reject           -                              20161025 delta                          
+domain2.com               ok       nok      ok       reject           exceeds 512 bytes              mail s1 s2 selector1 selector2          
+domain3.com               ok       nok      ok       reject           exceeds 10 DNS lookups         k2 k3 s1 s2 selector1 selector2         
+domain4.com     	  nok      ok       nok      no DMARC record  -                              -                                       
+domain5.com      	  nok      ok       ok       no DMARC record  -                              selector1 selector2  
 ```
 
 ### Example CSV Output
@@ -108,7 +113,12 @@ The CSV report will have the following columns:
 ### Example CSV:
 
 ```
-DOMAIN;DMARC;SPF;DKIM;DMARC_POLICY;SPF_FAILURE_REASON;DKIM_SELECTORS domain1.com;ok;ok;ok;reject;-;selector1 selector2 domain2.com;nok;ok;nok;none;invalid version;selector1
+DOMAIN;DMARC;SPF;DKIM;DMARC_POLICY;SPF_FAILURE_REASON;DKIM_SELECTORS
+domain1.com;ok;ok;ok;reject;-;20161025 delta
+domain2.com;ok;nok;ok;reject;exceeds 512 bytes;mail s1 s2 selector1 selector2
+domain3.com;ok;nok;ok;reject;exceeds 10 DNS lookups;k2 k3 s1 s2 selector1 selector2
+domain4.com;nok;ok;nok;no DMARC record;-;-
+domain5.com;nok;ok;ok;no DMARC record;-;selector1 selector2
 ```
 
 ## Options

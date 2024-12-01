@@ -112,3 +112,9 @@ for domain in "${domains[@]}"; do
         echo "$domain;$dmarc_result;$spf_result;$dkim_result;$dmarc_policy;$spf_reason;$dkim_selectors" >> "$report_file"
     fi
 done
+
+# Report file message
+if [[ "$report" -eq 1 ]]; then
+    echo
+    echo "Report successfully generated on file: $report_file"
+fi

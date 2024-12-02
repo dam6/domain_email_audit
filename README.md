@@ -83,19 +83,19 @@ This command checks SPF, DKIM, and DMARC records for domain1.com and domain2.com
 
 The script will print a detailed report in the terminal showing the status of DMARC, SPF, and DKIM records for each domain. The output will include:
 
-- DMARC status (ok or nok with a reason if nok)
-- SPF status (ok or nok with a reason if nok)
-- DKIM status (ok or nok with the selectors that passed)
+- DMARC status (ok, warn or fail with a reason if not ok)
+- SPF status (ok, warn or fail with a reason if not ok)
+- DKIM status (ok or fail with the selectors that passed)
 
 ### Example Output
 
 ```
 DOMAIN                    DMARC    SPF      DKIM     DMARC POLICY     SPF FAILURE REASON             DKIM SELECTORS                          
-domain1.com               ok       ok       ok       reject           -                              20161025 delta                          
-domain2.com               ok       nok      ok       reject           exceeds 512 bytes              mail s1 s2 selector1 selector2          
-domain3.com               ok       nok      ok       reject           exceeds 10 DNS lookups         k2 k3 s1 s2 selector1 selector2         
-domain4.com     	  nok      ok       nok      no DMARC record  -                              -                                       
-domain5.com      	  nok      ok       ok       no DMARC record  -                              selector1 selector2  
+domain1.com               warn     ok       ok       none             -                              20161025 delta                          
+domain2.com               ok       warn     ok       reject           exceeds 512 bytes              mail s1 s2 selector1 selector2          
+domain3.com               ok       warn     ok       reject           exceeds 10 DNS lookups         k2 k3 s1 s2 selector1 selector2         
+domain4.com     	  fail     ok       fail     no DMARC record  -                              -                                       
+domain5.com      	  fail     ok       ok       no DMARC record  -                              selector1 selector2  
 ```
 
 ### Example CSV Output
@@ -103,22 +103,22 @@ domain5.com      	  nok      ok       ok       no DMARC record  -               
 The CSV report will have the following columns:
 
 - DOMAIN: The domain being checked.
-- DMARC: Status of the DMARC record (ok or nok).
-- SPF: Status of the SPF record (ok or nok).
-- DKIM: Status of the DKIM record (ok or nok).
+- DMARC: Status of the DMARC record (ok,warn or fail).
+- SPF: Status of the SPF record (ok,warn or fail).
+- DKIM: Status of the DKIM record (ok or fail).
 - DMARC_POLICY: The DMARC policy (none, quarantine, or reject).
-- SPF_FAILURE_REASON: The reason for SPF failure (if any).
+- SPF_FAILURE_REASON: The reason for SPF warning or failure (if any).
 - DKIM_SELECTORS: List of DKIM selectors that passed (if any).
 
 ### Example CSV:
 
 ```
 DOMAIN;DMARC;SPF;DKIM;DMARC_POLICY;SPF_FAILURE_REASON;DKIM_SELECTORS
-domain1.com;ok;ok;ok;reject;-;20161025 delta
-domain2.com;ok;nok;ok;reject;exceeds 512 bytes;mail s1 s2 selector1 selector2
-domain3.com;ok;nok;ok;reject;exceeds 10 DNS lookups;k2 k3 s1 s2 selector1 selector2
-domain4.com;nok;ok;nok;no DMARC record;-;-
-domain5.com;nok;ok;ok;no DMARC record;-;selector1 selector2
+domain1.com;warn;ok;ok;none;-;20161025 delta
+domain2.com;ok;warn;ok;reject;exceeds 512 bytes;mail s1 s2 selector1 selector2
+domain3.com;ok;warn;ok;reject;exceeds 10 DNS lookups;k2 k3 s1 s2 selector1 selector2
+domain4.com;fail;ok;fail;no DMARC record;-;-
+domain5.com;fail;ok;ok;no DMARC record;-;selector1 selector2
 ```
 
 ## Options

@@ -15,10 +15,10 @@ domains=()
 while getopts ":d:f:w:-:" opt; do
     case $opt in
         d) IFS=',' read -r -a domains <<< "$OPTARG" ;;
-        f) 
+        f)
             [[ -f "$OPTARG" ]] && mapfile -t domains < "$OPTARG" || { echo "File $OPTARG does not exist."; exit 1; }
             ;;
-        w) 
+        w)
             [[ -f "$OPTARG" ]] && mapfile -t selectors < "$OPTARG" || { echo "File $OPTARG does not exist."; exit 1; }
             ;;
         -)
@@ -37,10 +37,10 @@ check_spf() {
     local spf_record
     spf_record=$(dig +short TXT "$domain" | grep -i 'v=spf1')
 
-    [[ -z "$spf_record" ]] && echo "nok record missing" && return
-    [[ ${#spf_record} -gt 512 ]] && echo "nok exceeds 512 bytes" && return
-    [[ $(echo "$spf_record" | grep -oE '(include:|a|mx|ptr|exists)' | wc -l) -gt 10 ]] && echo "nok exceeds 10 DNS lookups" && return
-    [[ ! "$spf_record" =~ "all" ]] && echo "nok missing 'all' mechanism" && return
+    [[ -z "$spf_record" ]] && echo "fail record missing" && return
+    [[ ${#spf_record} -gt 512 ]] && echo "warn exceeds 512 bytes" && return
+    [[ $(echo "$spf_record" | grep -oE '(include:|a|mx|ptr|exists)' | wc -l) -gt 10 ]] && echo "warn exceeds 10 DNS lookups" && return
+    [[ ! "$spf_record" =~ "all" ]] && echo "warn missing 'all' mechanism" && return
 
     echo "ok"
 }
@@ -51,13 +51,14 @@ check_dmarc() {
     local dmarc_record
     dmarc_record=$(dig +short TXT "_dmarc.$domain" | tr -d '"')
 
-    [[ -z "$dmarc_record" ]] && echo "nok no DMARC record" && return
-    [[ ! "$dmarc_record" =~ "v=DMARC1" ]] && echo "nok missing v=DMARC1" && return
+    [[ -z "$dmarc_record" ]] && echo "fail no DMARC record" && return
+    [[ ! "$dmarc_record" =~ "v=DMARC1" ]] && echo "fail missing v=DMARC1" && return
 
     local policy
     policy=$(echo "$dmarc_record" | grep -o 'p=[^;]*' | cut -d'=' -f2)
-    [[ -z "$policy" ]] && echo "nok missing policy" && return
-    [[ ! "$policy" =~ ^(none|quarantine|reject)$ ]] && echo "nok invalid policy" && return
+    [[ -z "$policy" ]] && echo "fail missing policy" && return
+    [[ "$policy" =~ ^none$ ]] && echo "warn 'none' policy detected" && return
+    [[ ! "$policy" =~ ^(none|quarantine|reject)$ ]] && echo "fail invalid policy" && return
 
     echo "ok $policy"
 }
@@ -73,7 +74,7 @@ check_dkim() {
             found_selectors+=("$selector")
         fi
     done
-    [[ ${#found_selectors[@]} -eq 0 ]] && echo "nok -" || echo "ok ${found_selectors[*]}"
+    [[ ${#found_selectors[@]} -eq 0 ]] && echo "fail -" || echo "ok ${found_selectors[*]}"
 }
 
 # Generate report file if requested

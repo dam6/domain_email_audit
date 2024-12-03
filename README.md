@@ -7,7 +7,7 @@ Shell script that checks the email security policies for domains by verifying th
 - Checks SPF, DKIM, and DMARC records for specified domains.
 - Supports input from a list of domains provided via a file or comma-separated values.
 - Verifies that each record is configured correctly and complies with standard email authentication practices.
-- DKIM records discovery by brute-forcing using a provided wordlist of selectors.
+- Discovery of DKIM records by brute-forcing using a provided wordlist of selectors.
 - Optionally generates a CSV report containing the audit results for each domain.
 
 ## Prerequisites
@@ -28,7 +28,7 @@ Shell script that checks the email security policies for domains by verifying th
 Clone this repository or download the domain_email_audit.sh script.
 
    ```
-   git clone https://github.com/your-username/domain_email_audit.git && cd domain_email_audit && chmod +x domain_email_audit.sh
+   git clone https://github.com/your-username/domain_email_audit.git && cd domain_email_audit
    ```
 
 ## Usage
@@ -51,7 +51,7 @@ You can also provide a file containing a list of domains using the -f flag:
 
 Where domains.txt contains one domain per line.
 
-### Selectors for DKIM Check (recommended)
+### Selectors for DKIM Check
 
 If you want to discover or check DKIM records, provide a file with selectors using the -w flag:
 
@@ -74,7 +74,7 @@ The CSV file will be named like domain_email_audit.sh.YYYY-MM-DD_HH-MM-SS.csv.
 ### Full Example
 
 ```
-./domain_email_audit.sh -f domains.txt -w selectors.txt --report
+./domain_email_audit.sh -f domains.txt -w selectors.txt --report --dns 1.1.1.1
 ```
 
 This command checks SPF, DKIM, and DMARC records for domain1.com and domain2.com, uses selectors from selectors.txt for DKIM, and generates a CSV report.
@@ -127,6 +127,7 @@ domain5.com;fail;ok;ok;no DMARC record;-;selector1 selector2
 - -f <file>: File containing a list of domains (one domain per line).
 - -w <file>: File containing a list of DKIM selectors to check (one selector per line).
 - --report: Generate a CSV report with audit results.
+- --dns: DNS server address.
 
 ## License
 

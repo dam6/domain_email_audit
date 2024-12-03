@@ -2,7 +2,7 @@
 
 # Function to display correct usage
 usage() {
-    echo "Usage: $0 -d <domain1,domain2,...> [-f <file>] [-w <selectors_file>] [--report]"
+    echo "Usage: $0 -d <domain1,domain2,...> [-f <file>] [-w <selectors_file>] [--report] [--dns <dns_server>]"
     exit 1
 }
 
@@ -10,6 +10,7 @@ usage() {
 selectors=()
 report=0
 domains=()
+dns_server="8.8.8.8" # Default DNS server
 
 # Parse command-line options
 while getopts ":d:f:w:-:" opt; do
@@ -22,7 +23,11 @@ while getopts ":d:f:w:-:" opt; do
             [[ -f "$OPTARG" ]] && mapfile -t selectors < "$OPTARG" || { echo "File $OPTARG does not exist."; exit 1; }
             ;;
         -)
-            [[ "$OPTARG" == "report" ]] && report=1 || usage
+            case "$OPTARG" in
+                report) report=1 ;;
+                dns) dns_server="${!OPTIND}"; OPTIND=$((OPTIND + 1)) ;;
+                *) usage ;;
+            esac
             ;;
         *) usage ;;
     esac
@@ -31,11 +36,17 @@ done
 # Ensure at least one domain is provided
 [[ ${#domains[@]} -eq 0 ]] && usage
 
+# Function to perform dig query
+dig_query() {
+    local query="$1"
+    dig @"$dns_server" +short TXT "$query"
+}
+
 # Check SPF record
 check_spf() {
     local domain="$1"
     local spf_record
-    spf_record=$(dig +short TXT "$domain" | grep -i 'v=spf1')
+    spf_record=$(dig_query "$domain" | grep -i 'v=spf1')
 
     [[ -z "$spf_record" ]] && echo "fail record missing" && return
     [[ ${#spf_record} -gt 512 ]] && echo "warn exceeds 512 bytes" && return
@@ -49,15 +60,15 @@ check_spf() {
 check_dmarc() {
     local domain="$1"
     local dmarc_record
-    dmarc_record=$(dig +short TXT "_dmarc.$domain" | tr -d '"')
+    dmarc_record=$(dig_query "_dmarc.$domain" | tr -d '"')
 
     [[ -z "$dmarc_record" ]] && echo "fail no DMARC record" && return
     [[ ! "$dmarc_record" =~ "v=DMARC1" ]] && echo "fail missing v=DMARC1" && return
 
     local policy
-    policy=$(echo "$dmarc_record" | grep -o 'p=[^;]*' | cut -d'=' -f2)
+    policy=$(echo "$dmarc_record" | grep -o 'p=[^;]*' | head -n 1 | cut -d'=' -f2)
     [[ -z "$policy" ]] && echo "fail missing policy" && return
-    [[ "$policy" =~ ^none$ ]] && echo "warn 'none' policy detected" && return
+    [[ "$policy" =~ ^none$ ]] && echo "warn none" && return
     [[ ! "$policy" =~ ^(none|quarantine|reject)$ ]] && echo "fail invalid policy" && return
 
     echo "ok $policy"
@@ -67,25 +78,46 @@ check_dmarc() {
 check_dkim() {
     local domain="$1"
     local found_selectors=()
+    local tmpfile
+    tmpfile=$(mktemp)
+
     for selector in "${selectors[@]}"; do
-        local dkim_record
-        dkim_record=$(dig +short TXT "$selector._domainkey.$domain")
-        if [[ -n "$dkim_record" ]]; then
-            found_selectors+=("$selector")
-        fi
+        (
+            dkim_record=$(dig_query "${selector}._domainkey.${domain}")
+            # If returns a CNAME
+            if [[ "$dkim_record" == *"." ]]; then
+                cname_target=$(echo "$dkim_record" | tr -d '"')
+                dkim_record=$(dig_query "$cname_target")
+            fi
+            # check if there is any public key
+            if [[ "$dkim_record" == *"p="* ]]; then
+                echo "$selector"
+            fi
+        ) >> "$tmpfile" &
     done
-    [[ ${#found_selectors[@]} -eq 0 ]] && echo "fail -" || echo "ok ${found_selectors[*]}"
+    wait
+
+    while IFS= read -r selector; do
+        found_selectors+=("$selector")
+    done < "$tmpfile"
+    rm "$tmpfile"
+
+    if [[ ${#found_selectors[@]} -eq 0 ]]; then
+        echo "fail -"
+    else
+        echo "ok ${found_selectors[*]}"
+    fi
 }
 
 # Generate report file if requested
 if [[ "$report" -eq 1 ]]; then
     timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
     report_file="${0##*/}.$timestamp.csv"
-    echo "DOMAIN;DMARC;SPF;DKIM;DMARC_POLICY;SPF_FAILURE_REASON;DKIM_SELECTORS" > "$report_file"
+    echo "DOMAIN;DMARC;SPF;DKIM;DMARC_POLICY;SPF_FAILURE_WARN_REASON;DKIM_SELECTORS" > "$report_file"
 fi
 
 # Print table header
-printf "%-25s %-8s %-8s %-8s %-16s %-30s %-40s\n" "DOMAIN" "DMARC" "SPF" "DKIM" "DMARC POLICY" "SPF FAILURE REASON" "DKIM SELECTORS"
+printf "%-25s %-8s %-8s %-8s %-16s %-30s %-40s\n" "DOMAIN" "DMARC" "SPF" "DKIM" "DMARC POLICY" "SPF FAILURE/WARN REASON" "DKIM SELECTORS"
 
 # Process each domain
 for domain in "${domains[@]}"; do

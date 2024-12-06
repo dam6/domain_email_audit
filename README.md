@@ -1,5 +1,7 @@
 # Domain Email Audit
 
+![Project Logo](logo.png)
+
 Shell script that checks the email security policies for domains by verifying their SPF, DKIM, and DMARC records. It provides a detailed report on the configuration of these records to ensure proper email authentication, security, and compliance with common email standards.
 
 ## Features

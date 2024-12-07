@@ -30,7 +30,7 @@ Shell script that checks the email security policies for domains by verifying th
 Clone this repository or download the domain_email_audit.sh script.
 
    ```
-   git clone https://github.com/your-username/domain_email_audit.git && cd domain_email_audit
+   git clone https://github.com/dam6/domain_email_audit.git && cd domain_email_audit
    ```
 
 ## Usage
